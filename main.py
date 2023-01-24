@@ -1,6 +1,12 @@
 import pygame
 import os
 import random
+from classes.bird import Bird
+from classes.cloud import Cloud
+from classes.dinosaur import Dinosaur
+from classes.largecactus import LargeCactus
+from classes.obstacle import Obstacle
+from classes.smallcactus import SmallCactus
 pygame.init()
 
 # Global Constants
@@ -28,168 +34,13 @@ CLOUD = pygame.image.load(os.path.join("Assets/Other", "Cloud.png"))
 
 BG = pygame.image.load(os.path.join("Assets/Other", "Track.png"))
 
-class Dinosaur:
-    X_POS = 80
-    Y_POS = 310
-    Y_POS_DUCK = 340
-    JUMP_VEL = 8.5
-
-    def __init__(self):
-        # Nastavení obrázků
-        self.duck_img = DUCKING
-        self.run_img = RUNNING
-        self.jump_img = JUMPING
-
-        # Nastavení ať dinosaurus ze začátku běží
-        self.dino_duck = False
-        self.dino_run = True
-        self.dino_jump = False
-
-        # Pro animaci
-        self.step_index = 0
-        self.jump_vel = self.JUMP_VEL
-        self.image = self.run_img[0]
-        # Pro hitboxy
-        self.dino_rect = self.image.get_rect()
-        self.dino_rect.x = self.X_POS
-        self.dino_rect.y = self.Y_POS
-
-    # Funkce, která updatuje dinosaura každý while loop
-    def update(self, userInput):
-        if self.dino_duck:
-            self.duck()
-        if self.dino_run:
-            self.run()
-        if self.dino_jump:
-            self.jump()
-
-        # Resetuje každých 10 kroků
-        if self.step_index >= 10:
-            self.step_index = 0
-
-        # Když zmáčkneme šipku nahoru a dinosaurus momentálně neskáče, ať začne skákat
-        if userInput[pygame.K_UP] and not self.dino_jump:
-            self.dino_duck = False
-            self.dino_run = False
-            self.dino_jump = True
-        # Když zmáčkneme šipku dolů a dinosaurus momentálně neskáče, ať se skrčí
-        elif userInput[pygame.K_DOWN] and not self.dino_jump:
-            self.dino_duck = True
-            self.dino_run = False
-            self.dino_jump = False
-        # Když dinosaurus momentálně neskáče a nemačkáme šipku dolů, ať běží
-        elif not (self.dino_jump or userInput[pygame.K_DOWN]):
-            self.dino_duck = False
-            self.dino_run = True
-            self.dino_jump = False
-
-    # Funkce na skrčení
-    def duck(self):
-        self.image = self.duck_img[self.step_index // 5]
-        self.dino_rect = self.image.get_rect()
-        self.dino_rect.x = self.X_POS
-        self.dino_rect.y = self.Y_POS_DUCK
-        self.step_index += 1
-
-    # Funkce na běh
-    def run(self):
-        self.image = self.run_img[self.step_index // 5]
-        self.dino_rect = self.image.get_rect()
-        self.dino_rect.x = self.X_POS
-        self.dino_rect.y = self.Y_POS
-        self.step_index += 1
-
-    # Funkce na skok
-    def jump(self):
-        self.image = self.jump_img
-        if self.dino_jump:
-            self.dino_rect.y -= self.jump_vel * 4
-            self.jump_vel -= 0.8
-        if self.jump_vel < - self.JUMP_VEL:
-            self.dino_jump = False
-            self.jump_vel = self.JUMP_VEL
-
-    # Funkce na vykreslení
-    def draw(self, SCREEN):
-        SCREEN.blit(self.image, (self.dino_rect.x, self.dino_rect.y))
-
-
-class Cloud:
-    def __init__(self):
-        self.x = SCREEN_WIDTH + random.randint(800, 1000)
-        self.y = random.randint(50, 100)
-        self.image = CLOUD
-        self.width = self.image.get_width()
-
-    # Funkce na updatování mraků každý loop
-    def update(self):
-        self.x -= game_speed
-        # Když mrak dojede doleva, resetuje se
-        if self.x < -self.width:
-            self.x = SCREEN_WIDTH + random.randint(2500, 3000)
-            self.y = random.randint(50, 100)
-
-    # Funkce na vykreslení
-    def draw(self, SCREEN):
-        SCREEN.blit(self.image, (self.x, self.y))
-
-
-class Obstacle:
-    def __init__(self, image, type):
-        self.image = image
-        self.type = type
-        self.rect = self.image[self.type].get_rect()
-        self.rect.x = SCREEN_WIDTH
-
-    # Funkce na updatování pěkážek
-    def update(self):
-        self.rect.x -= game_speed
-        # Když překážka dojde doleva, zmizí
-        if self.rect.x < -self.rect.width:
-            obstacles.pop()
-
-    # Funkce na vykreslení překážek
-    def draw(self, SCREEN):
-        SCREEN.blit(self.image[self.type], self.rect)
-
-
-class SmallCactus(Obstacle):
-    def __init__(self, image):
-        self.type = random.randint(0, 2)
-        super().__init__(image, self.type)
-        self.rect.y = 325
-
-
-class LargeCactus(Obstacle):
-    def __init__(self, image):
-        self.type = random.randint(0, 2)
-        super().__init__(image, self.type)
-        self.rect.y = 300
-
-
-class Bird(Obstacle):
-    def __init__(self, image):
-        self.type = 0
-        super().__init__(image, self.type)
-        self.rect.y = 250
-        self.index = 0
-
-    # Funkce na vykreslení
-    def draw(self, SCREEN):
-        # Animace ptáka
-        if self.index >= 9:
-            self.index = 0
-        SCREEN.blit(self.image[self.index//5], self.rect)
-        self.index += 1
-
-
 def main():
     global game_speed, x_pos_bg, y_pos_bg, points, obstacles
     run = True
     clock = pygame.time.Clock()
-    player = Dinosaur()
-    cloud = Cloud()
+    player = Dinosaur(DUCKING, RUNNING, JUMPING)
     game_speed = 20
+    cloud = Cloud(SCREEN_WIDTH, CLOUD, game_speed)
     x_pos_bg = 0
     y_pos_bg = 380
     points = 0
@@ -206,7 +57,10 @@ def main():
             game_speed += 1
 
         # Vypsání skóre
-        text = font.render("Points: " + str(points), True, (0, 0, 0))
+        if points % 900 >= 700:
+            text = font.render("Points: " + str(points), True, (255, 255, 255))
+        else:
+            text = font.render("Points: " + str(points), True, (0, 0, 0))
         textRect = text.get_rect()
         textRect.center = (1000, 40)
         SCREEN.blit(text, textRect)
@@ -241,11 +95,11 @@ def main():
 
         if len(obstacles) == 0:
             if random.randint(0, 2) == 0:
-                obstacles.append(SmallCactus(SMALL_CACTUS))
+                obstacles.append(SmallCactus(SMALL_CACTUS, SCREEN_WIDTH, game_speed, obstacles))
             elif random.randint(0, 2) == 1:
-                obstacles.append(LargeCactus(LARGE_CACTUS))
+                obstacles.append(LargeCactus(LARGE_CACTUS, SCREEN_WIDTH, game_speed, obstacles))
             elif random.randint(0, 2) == 2:
-                obstacles.append(Bird(BIRD))
+                obstacles.append(Bird(BIRD, SCREEN_WIDTH, game_speed, obstacles))
 
         # Vykreslení překážek
         for obstacle in obstacles:
